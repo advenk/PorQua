@@ -161,8 +161,8 @@ class MeanVariance(Optimization):
                  mean_estimator: Optional[MeanEstimator] = None,
                  **kwargs):
         super().__init__(**kwargs)
-        self.covariance = Covariance() if covariance is None else covariance
-        self.mean_estimator = MeanEstimator() if mean_estimator is None else MeanEstimator
+        self.covariance = covariance if covariance is not None else Covariance()
+        self.mean_estimator = mean_estimator if mean_estimator is not None else MeanEstimator()
         self.params.setdefault('risk_aversion', 1)
 
     def set_objective(self, optimization_data: OptimizationData) -> None:
