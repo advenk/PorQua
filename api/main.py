@@ -5,18 +5,15 @@ import numpy as np
 from io import StringIO
 import sys
 from pathlib import Path
-
-# Add src directory to Python path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
-
-# Import PorQua components
 from optimization import MeanVariance, OptimizationParameter, Constraints
 from optimization_data import OptimizationData
 from covariance import Covariance
 from mean_estimation import MeanEstimator
 
-app = FastAPI(title="PorQua API", description="Portfolio Optimization API")
+app = FastAPI(title="PorQua API", description="Portfolio Web API")
 
+# TODO: take "mean-variance" as a parameter, and add support for other optimisation classes
 @app.post("/optimize/mean-variance")
 async def optimize_mean_variance(
     returns_file: UploadFile,
@@ -28,33 +25,28 @@ async def optimize_mean_variance(
     solver_name: str = Query("cvxopt", description="Solver to use for optimization")
 ):
     try:
-        # Read and validate returns data
         content = await returns_file.read()
         returns_df = pd.read_csv(StringIO(content.decode()), index_col=0, parse_dates=True)
         
         if returns_df.empty:
             raise HTTPException(status_code=400, detail="Empty returns data")
         
-        # Ensure returns are numeric
         returns_df = returns_df.astype(float)
         
-        # Configure optimization components
         optimization_params = OptimizationParameter(
             risk_aversion=float(risk_aversion),
             solver_name=solver_name,
             verbose=True
         )
         
-        # Initialize constraints with asset universe
         asset_universe = returns_df.columns.tolist()
         constraints = Constraints(selection=asset_universe)
-        constraints.add_box(box_type="LongOnly", lower=float(min_weight), upper=float(max_weight))
-        constraints.add_budget()  # Adds sum of weights = 1 constraint
+        constraints.add_box(box_type="LongOnly", lower=float(min_weight), upper=float(max_weight)) 
+        constraints.add_budget()  # use 100% of the budget
         
         covariance = Covariance(method=covariance_method)
         mean_estimator = MeanEstimator(method=mean_estimation_method)
         
-        # Initialize optimizer
         optimizer = MeanVariance(
             params=optimization_params,
             constraints=constraints,
@@ -62,7 +54,6 @@ async def optimize_mean_variance(
             mean_estimator=mean_estimator
         )
         
-        # Prepare optimization data
         opt_data = {'return_series': returns_df}
         
         # Set objective and solve
@@ -74,6 +65,8 @@ async def optimize_mean_variance(
         
         # Calculate portfolio statistics
         weights = pd.Series(optimizer.results['weights'])
+
+        # 252 from the example jupyter notebooks where width is 252 so we assume it's the same here
         portfolio_return = (returns_df * weights).sum(axis=1).mean() * 252  # Annualized
         portfolio_vol = (returns_df * weights).sum(axis=1).std() * np.sqrt(252)  # Annualized
         
@@ -89,6 +82,9 @@ async def optimize_mean_variance(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# TODO: 1. add support for backtesting and also comparison with given indices performance
 
 if __name__ == "__main__":
     import uvicorn
