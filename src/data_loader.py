@@ -37,22 +37,22 @@ def load_data_msci(path: str = None, n: int = 24) -> dict[str, pd.DataFrame]:
     path = os.path.join(os.getcwd(), f'data{os.sep}') if path is None else path
     # Load msci country index return series
     df = pd.read_csv(os.path.join(path, 'msci_country_indices.csv'),
-                        sep=';',
+                        sep=',',
                         index_col=0,
                         header=0,
                         parse_dates=True)
-    df.index = pd.to_datetime(df.index, format='%d/%m/%Y')
+    df.index = pd.to_datetime(df.index, format='%d-%m-%Y')
     series_id = df.columns[0:n]
     X = df[series_id]
 
     # Load msci world index return series
     y = pd.read_csv(f'{path}NDDLWI.csv',
-                    sep=';',
+                    sep=',',
                     index_col=0,
                     header=0,
                     parse_dates=True)
 
-    y.index = pd.to_datetime(y.index, format='%d/%m/%Y')
+    y.index = pd.to_datetime(y.index, format='%d-%m-%Y')
 
     return {'return_series': X, 'bm_series': y}
 
