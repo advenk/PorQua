@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    container_name: porqua-api
+    # Expose port 8000 on the host, mapping to port 8000 in the container
+    ports:
+      - "8000:8000"
+    # No volumes defined for api service currently
+    environment:
+      # Add any environment variables needed by the API here
+      # - MY_API_KEY=secret
+      - PYTHONUNBUFFERED=1 # Ensures logs show up immediately
+    networks:
+      - porqua-net
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui.Dockerfile
+    container_name: porqua-ui
+    # Expose port 8888 on the host, mapping to port 8888 in the container
+    ports:
+      - "8888:8888"
+    volumes:
+      # Mount local UI code into container for live changes during development (optional)
+      - ./ui:/workspace/ui
+    environment:
+      # Pass the API URL to the UI container. The notebook needs to read this.
+      - API_BASE_URL=http://api:8000 # Use service name 'api' within the docker network
+      - PYTHONUNBUFFERED=1
+    # Depend on the API service being ready (basic check)
+    # depends_on:
+      # - api
+    networks:
+      - porqua-net
+
+networks:
+  porqua-net:
+    driver: bridge 
