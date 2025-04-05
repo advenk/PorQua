@@ -1,0 +1,18 @@
+{
+    "name": "PorQua Prototype",
+    "dockerComposeFile": "../api/docker-compose.yml",
+    "service": "ui",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "forwardPorts": [8000, 8888],
+    "portsAttributes": {
+      "8000": {
+        "label": "PorQua API",
+        "onAutoForward": "notify"
+      },
+      "8888": {
+        "label": "JupyterLab UI",
+        "onAutoForward": "notify"
+      }
+    },
+    "postCreateCommand": "echo 'Codespace environment ready for PorQua!'"
+  }
